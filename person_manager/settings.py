@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +22,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-n)c&adly!5*k!y21^amoxe4_#g8+12p3x+1mi5x@9&^u(2ru6f'
+# SECRET_KEY = 'django-insecure-n)c&adly!5*k!y21^amoxe4_#g8+12p3x+1mi5x@9&^u(2ru6f'
+SECRET_KEY = os.environ.get('SECRET_KEY', default='your secret key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = []
 
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Application definition
 
@@ -42,6 +48,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -82,15 +89,26 @@ WSGI_APPLICATION = 'person_manager.wsgi.application'
 #     }
 # }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'person_manager_db',  # Nombre de la base de datos que creaste
+#         'USER': 'root',  # Usuario de MySQL, generalmente 'root' en XAMPP
+#         'PASSWORD': '',  # Contraseña del usuario de MySQL, usualmente vacía por defecto en XAMPP
+#         'HOST': 'localhost',  # Host de la base de datos
+#         'PORT': '3306',  # Puerto de MySQL, usualmente 3306
+#     }
+# }
+
+# Database documentation https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
+# Database documentation https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'person_manager_db',  # Nombre de la base de datos que creaste
-        'USER': 'root',  # Usuario de MySQL, generalmente 'root' en XAMPP
-        'PASSWORD': '',  # Contraseña del usuario de MySQL, usualmente vacía por defecto en XAMPP
-        'HOST': 'localhost',  # Host de la base de datos
-        'PORT': '3306',  # Puerto de MySQL, usualmente 3306
-    }
+    'default': dj_database_url.config(
+        default='mysql://root@localhost:3306/person_manager_db',
+        conn_max_age=600
+    )
 }
 
 # Password validation
@@ -128,6 +146,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
